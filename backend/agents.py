@@ -211,3 +211,8 @@ def stream_review(code=None, repo_url=None, language="python"):
     report = _moderate(survivors, len(files))
     yield {"type": "report", "report": report, "findings": survivors, "file_count": len(files)}
     yield {"type": "done"}
+
+
+# Health note: agent prompts are tuned to return strict JSON. The Critic is the
+# hallucination guard — it removes findings it cannot verify against retrieved code,
+# which is the core differentiator vs. black-box single-pass reviewers.

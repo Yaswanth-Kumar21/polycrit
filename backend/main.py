@@ -45,3 +45,7 @@ def review(req: ReviewRequest):
             yield f"data: {json.dumps({'type': 'error', 'message': str(e)})}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")
+
+# NOTE: the UI is served from the same origin so no CORS config is needed for the
+# single-host deploy (Koyeb/Render). If you split the frontend to Vercel later,
+# add CORSMiddleware here and allow the frontend origin.
