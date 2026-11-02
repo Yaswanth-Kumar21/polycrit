@@ -1,0 +1,6 @@
+fastapi>=0.110
+uvicorn[standard]>=0.29
+openai>=1.30
+scikit-learn>=1.4
+python-dotenv>=1.0
+pydantic>=2.6

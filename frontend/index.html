@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polycrit — Multi-Agent Code Reviewer</title>
+  <style>
+    :root{
+      --bg:#0b0f1a;--surface:#131b2e;--surface-2:#1a2440;--border:rgba(255,255,255,.08);
+      --text:#e6ebf5;--dim:#9aa6c2;--faint:#6b7793;--accent:#5eead4;--violet:#a78bfa;
+      --high:#f87171;--med:#fbbf24;--low:#4ade80;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;-webkit-font-smoothing:antialiased}
+    a{color:var(--accent)}
+    code{font-family:'JetBrains Mono',ui-monospace,monospace}
+    .wrap{max-width:1180px;margin:0 auto;padding:28px 20px 80px}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+    .logo{width:40px;height:40px;border-radius:11px;background:linear-gradient(135deg,var(--accent),var(--violet));display:grid;place-items:center;font-weight:800;color:#0b0f1a}
+    h1{font-size:1.45rem;font-weight:700;letter-spacing:-.02em}
+    .sub{color:var(--faint);font-size:.85rem;margin-left:auto}
+    .grid{display:grid;grid-template-columns:340px 1fr;gap:22px;align-items:start}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px}
+    label{display:block;font-size:.76rem;color:var(--faint);margin:14px 0 6px;text-transform:uppercase;letter-spacing:.05em}
+    input,select,textarea{width:100%;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:11px 12px;font-size:.92rem;font-family:inherit}
+    textarea{min-height:170px;resize:vertical;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.82rem}
+    input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent)}
+    .btn{margin-top:18px;width:100%;padding:13px;border:0;border-radius:9px;font-weight:700;font-size:1rem;cursor:pointer;background:linear-gradient(135deg,var(--accent),var(--violet));color:#0b0f1a;transition:filter .2s,transform .1s}
+    .btn:hover{filter:brightness(1.08)}.btn:active{transform:translateY(1px)}.btn:disabled{opacity:.6;cursor:not-allowed}
+    .hint{color:var(--faint);font-size:.76rem;margin-top:10px}
+    .hint a{color:var(--accent)}
+    .empty{color:var(--faint);text-align:center;padding:70px 0;line-height:1.9}
+    .empty b{color:var(--dim)}
+    .meta{color:var(--faint);font-size:.78rem;margin-bottom:14px}
+    .err{color:var(--high);background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.3);border-radius:10px;padding:12px 14px;font-size:.86rem;margin-top:14px}
+    /* steps */
+    .steps{display:flex;flex-direction:column;gap:8px;margin-bottom:18px}
+    .step{display:flex;gap:11px;align-items:center;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:10px 13px;font-size:.86rem}
+    .step .dot{width:11px;height:11px;border-radius:50%;flex:0 0 auto;background:var(--faint)}
+    .step.done .dot{background:var(--low)}.step.running .dot{background:var(--med);animation:pulse 1s infinite}.step.critic .dot{background:var(--violet)}
+    @keyframes pulse{50%{opacity:.3}}
+    .step .nm{font-weight:600;flex:1}
+    .step .st{color:var(--faint);font-size:.74rem}
+    /* findings */
+    .findings{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 18px}
+    @media(max-width:720px){.findings{grid-template-columns:1fr}}
+    .finding{background:var(--surface-2);border:1px solid var(--border);border-left-width:3px;border-radius:9px;padding:11px 13px}
+    .finding.high{border-left-color:var(--high)}.finding.med{border-left-color:var(--med)}.finding.low{border-left-color:var(--low)}
+    .finding .top{display:flex;justify-content:space-between;gap:8px;align-items:center;margin-bottom:4px}
+    .sev{font-size:.66rem;font-weight:700;padding:2px 7px;border-radius:999px;text-transform:uppercase;letter-spacing:.04em}
+    .sev.high{background:rgba(248,113,113,.15);color:var(--high)}.sev.med{background:rgba(251,191,36,.15);color:var(--med)}.sev.low{background:rgba(74,222,128,.15);color:var(--low)}
+    .finding .ttl{font-weight:600;font-size:.86rem}
+    .finding .ag{color:var(--faint);font-size:.7rem}
+    .finding .det{color:var(--dim);font-size:.8rem;margin-top:4px}
+    .finding .fx{color:var(--accent);font-size:.78rem;margin-top:4px}
+    .finding .cn{color:var(--faint);font-size:.7rem;margin-top:4px}
+    /* report */
+    .report{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;margin-top:6px}
+    .report h2{font-size:1.05rem;margin-bottom:12px}
+    .report .md{white-space:pre-wrap;font-family:'JetBrains Mono',ui-monospace,monospace;font-size:.84rem;line-height:1.7;color:var(--dim)}
+    .report .md h1,.report .md h2,.report .md h3{color:var(--text)}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">PC</div>
+      <h1>Polycrit</h1>
+      <span class="sub">Evaluation-First Multi-Agent Code Reviewer</span>
+    </header>
+
+    <div class="grid">
+      <div class="card">
+        <label for="repo">GitHub repo URL (optional)</label>
+        <input id="repo" type="text" placeholder="https://github.com/user/repo" />
+        <label for="lang">Language</label>
+        <select id="lang">
+          <option value="python">Python</option>
+          <option value="javascript">JavaScript</option>
+          <option value="typescript">TypeScript</option>
+          <option value="java">Java</option>
+          <option value="php">PHP</option>
+          <option value="c">C</option>
+        </select>
+        <label for="code">...or paste code</label>
+        <textarea id="code" placeholder="def login(user, pwd):&#10;    if pwd == 'admin123':&#10;        return True&#10;    return False"></textarea>
+        <button class="btn" id="run">Run Review</button>
+        <p class="hint">Needs a free Groq key in <code>.env</code> · get one at <a href="https://console.groq.com/keys" target="_blank" rel="noopener">console.groq.com/keys</a></p>
+      </div>
+
+      <div class="card" id="results">
+        <div class="empty"><b>Polycrit</b> runs a panel of AI agents over your code:<br>architecture · security · performance · test gaps · style.<br>Then a <b>Critic</b> re-checks every finding against the code, and a <b>Moderator</b> writes the report.<br><br>Paste code or a repo URL and hit <b>Run Review</b>.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => (s == null ? "" : String(s)).replace(/[&<>]/g, (c) => ({ "&":"&amp;","<":"&lt;",">":"&gt;" }[c]));
+    const sevClass = (s) => ({ high:"high", med:"med", medium:"med", low:"low" }[(s||"").toLowerCase()] || "low");
+    function md(src){
+      let h = esc(src);
+      h = h.replace(/^### (.*)$/gm,"<h3>$1</h3>").replace(/^## (.*)$/gm,"<h2>$1</h2>").replace(/^# (.*)$/gm,"<h2>$1</h2>")
+           .replace(/\*\*(.+?)\*\*/g,"<strong>$1</strong>").replace(/`([^`]+)`/g,"<code style='color:var(--accent)'>$1</code>");
+      return h;
+    }
+
+    let findings = [];
+    let stream = null;
+
+    function reset(){
+      findings = [];
+      $("results").innerHTML =
+        '<div class="meta" id="meta">Starting…</div><div class="steps" id="steps"></div>'
+        + '<div class="findings" id="findings"></div><div class="report" id="report" style="display:none"></div>';
+    }
+    function stepsEl(){ return $("steps"); }
+    function addStep(name, cls){
+      const el = document.createElement("div");
+      el.className = "step " + cls;
+      el.dataset.name = name;
+      el.innerHTML = '<div class="dot"></div><div class="nm">'+esc(name)+'</div><div class="st"></div>';
+      stepsEl().appendChild(el);
+      return el;
+    }
+    function setStepState(name, state){
+      const els = stepsEl().querySelectorAll('.step');
+      for(const e of els){ if(e.dataset.name===name){ e.classList.remove('running','done','critic'); e.classList.add(state); e.querySelector('.st').textContent = state; } }
+    }
+    function renderFindings(){
+      const f = $("findings");
+      if(!findings.length){ f.innerHTML = ""; return; }
+      f.innerHTML = findings.map((x) => (
+        '<div class="finding '+sevClass(x.severity)+'">'
+        + '<div class="top"><span class="sev '+sevClass(x.severity)+'">'+esc(x.severity)+'</span><span class="ag">'+esc(x.agent)+'</span></div>'
+        + '<div class="ttl">'+esc(x.title)+'</div>'
+        + '<div class="det">'+esc(x.detail)+'</div>'
+        + (x.file && x.file!=="—" ? '<div class="cn">📁 '+esc(x.file)+'</div>' : '')
+        + (x.fix ? '<div class="fx">↳ '+esc(x.fix)+'</div>' : '')
+        + '<div class="cn">confidence: '+esc(x.confidence)+'</div>'
+        + '</div>'
+      )).join("");
+    }
+
+    function handleEvent(ev){
+      const meta = $("meta");
+      if(ev.type === "start"){
+        meta.textContent = "Loaded " + ev.file_count + " file(s) · " + ev.chunk_count + " chunks";
+      } else if(ev.type === "agent_start"){
+        addStep(ev.agent, "running");
+      } else if(ev.type === "agent_done"){
+        setStepState(ev.agent, "done");
+        if(ev.findings && ev.findings.length){
+          findings.push(...ev.findings);
+          renderFindings();
+        }
+      } else if(ev.type === "critic_start"){
+        addStep("Critic (verify findings)", "running critic");
+      } else if(ev.type === "critic_done"){
+        setStepState("Critic (verify findings)", "done");
+        const els = stepsEl().querySelectorAll('.step');
+        const last = els[els.length-1];
+        if(last) last.querySelector('.st').textContent = "kept "+ev.kept+" / removed "+ev.removed;
+      } else if(ev.type === "moderator_start"){
+        addStep("Moderator (final report)", "running");
+      } else if(ev.type === "report"){
+        setStepState("Moderator (final report)", "done");
+        const r = $("report"); r.style.display = "block";
+        r.innerHTML = "<h2>Final Review Report</h2><div class='md'>"+md(ev.report)+"</div>";
+        if(ev.findings){ findings = ev.findings; renderFindings(); }
+      } else if(ev.type === "error"){
+        const e = document.createElement("div"); e.className="err"; e.textContent = ev.message; $("results").appendChild(e);
+      } else if(ev.type === "done"){
+        // finished
+      }
+    }
+
+    async function run(){
+      const body = { repo_url: $("repo").value.trim() || null, code: $("code").value.trim() || null, language: $("lang").value };
+      if(!body.repo_url && !body.code){ alert("Provide a repo URL or paste code."); return; }
+      const btn = $("run"); btn.disabled = true; btn.textContent = "Reviewing…";
+      reset();
+      try {
+        const res = await fetch("/api/review", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body) });
+        if(!res.ok){ let m="Server error ("+res.status+")"; try{ const j=await res.json(); m=j.error||m; }catch(e){} renderError(m); return; }
+        const reader = res.body.getReader(); const dec = new TextDecoder(); let buf = "";
+        while(true){
+          const { done, value } = await reader.read();
+          if(done) break;
+          buf += dec.decode(value, { stream:true });
+          let idx;
+          while((idx = buf.indexOf("\n\n")) >= 0){
+            const chunk = buf.slice(0, idx).trim(); buf = buf.slice(idx + 2);
+            if(!chunk.startsWith("data:")) continue;
+            try { handleEvent(JSON.parse(chunk.slice(5).trim())); } catch(e){ /* skip bad */ }
+          }
+        }
+      } catch(e){ renderError("Network/server error: " + e.message); }
+      finally { btn.disabled = false; btn.textContent = "Run Review"; }
+    }
+    function renderError(msg){ $("results").innerHTML = '<div class="err">'+esc(msg)+'</div>'; }
+    $("run").addEventListener("click", run);
+  </script>
+</body>
+</html>
