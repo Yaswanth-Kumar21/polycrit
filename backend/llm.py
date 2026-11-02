@@ -24,7 +24,7 @@ def _init():
         api_key=api_key,
         base_url=os.getenv("LLM_BASE_URL", "https://api.groq.com/openai/v1"),  # noqa
     )
-    _model = os.getenv("LLM_MODEL", "llama-3.3-70b-versatile")  # noqa
+    _model = os.getenv("LLM_MODEL", "openai/gpt-oss-120b")  # noqa
 
 
 # lazy import of os kept at bottom for readability; but we need it at runtime:

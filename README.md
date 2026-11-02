@@ -2,7 +2,7 @@
 
 > Paste code or a GitHub repo URL. A **panel of AI agents** reviews it — architecture, security, performance, test gaps, style — then a **Critic** re-checks every finding against the actual code and removes the ones the agents made up, and a **Moderator** writes the final report, including an honest *"What I could NOT verify"* section.
 
-![stack](https://img.shields.io/badge/backend-FastAPI-5eead4) ![llm](https://img.shields.io/badge/LLM-Groq%20LLaMA%203.3%20(free)-a78bfa) ![agents](https://img.shields.io/badge/agents-5%20reviewers%20%2B%20critic%20%2B%20moderator-60a5fa)
+![stack](https://img.shields.io/badge/backend-FastAPI-5eead4) ![llm](https://img.shields.io/badge/LLM-Groq%20GPT-OSS%20120B%20(free)-a78bfa) ![agents](https://img.shields.io/badge/agents-5%20reviewers%20%2B%20critic%20%2B%20moderator-60a5fa)
 
 ## Why I built this
 
@@ -42,7 +42,7 @@ Everything is **streamed live** to the browser via SSE — you watch each agent 
 |---|---|
 | API | FastAPI (Python), SSE streaming |
 | Agent orchestration | a small, explicit graph (`backend/agents.py`) — no black-box framework, so the logic is readable and defensible in an interview |
-| LLM | configurable; defaults to Groq's free LLaMA 3.3 70B (OpenAI-compatible, no paid key) |
+| LLM | configurable; defaults to Groq's free `openai/gpt-oss-120b` (OpenAI-compatible, no paid key) |
 | Retrieval | scikit-learn TF-IDF nearest-neighbour over code chunks (offline, no embedding API) |
 | Frontend | single-page HTML/CSS/JS served by FastAPI |
 
@@ -91,7 +91,7 @@ Polycrit serves its own frontend, so it's **one deploy** — no separate fronten
 2. Sign up at https://www.koyeb.com with GitHub (no credit card).
 3. **Create Service → GitHub → select this repo**.
 4. Builder: Python. Build command: `pip install -r backend/requirements.txt`. Run command: `uvicorn main:app --host 0.0.0.0 --port $PORT --app-dir backend`.
-5. Add environment variable `LLM_API_KEY` (your Groq key) and `LLM_MODEL=llama-3.3-70b-versatile`.
+5. Add environment variable `LLM_API_KEY` (your Groq key) and `LLM_MODEL=openai/gpt-oss-120b`.
 6. Deploy. You get `https://<your-service>.koyeb.app`.
 
 ### Option B — Render (free web service, sleeps when idle)
